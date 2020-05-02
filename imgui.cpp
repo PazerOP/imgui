@@ -4963,8 +4963,33 @@ static ImVec2 CalcWindowContentSize(ImGuiWindow* window)
         return window->ContentSize;
 
     ImVec2 sz;
-    sz.x = IM_FLOOR((window->ContentSizeExplicit.x != 0.0f) ? window->ContentSizeExplicit.x : window->DC.CursorMaxPos.x - window->DC.CursorStartPos.x);
-    sz.y = IM_FLOOR((window->ContentSizeExplicit.y != 0.0f) ? window->ContentSizeExplicit.y : window->DC.CursorMaxPos.y - window->DC.CursorStartPos.y);
+    sz.x = (window->ContentSizeExplicit.x != 0.0f) ? window->ContentSizeExplicit.x : window->DC.CursorMaxPos.x - window->DC.CursorStartPos.x;
+    sz.y = (window->ContentSizeExplicit.y != 0.0f) ? window->ContentSizeExplicit.y : window->DC.CursorMaxPos.y - window->DC.CursorStartPos.y;
+
+    ImGuiContext& g = *GImGui;
+    if (g.NextWindowData.Flags & ImGuiNextWindowDataFlags_HasContentSizeConstraint)
+    {
+        // Using -1,-1 on either X/Y axis to preserve the current size.
+        ImRect cr = g.NextWindowData.ContentSizeConstraintRect;
+        sz.x = cr.Min.x >= 0 ? ImMax(cr.Min.x, sz.x) : sz.x;
+        sz.y = cr.Min.y >= 0 ? ImMax(cr.Min.y, sz.y) : sz.y;
+        sz.x = cr.Max.x >= 0 ? ImMin(cr.Max.x, sz.x) : sz.x;
+        sz.y = cr.Max.y >= 0 ? ImMin(cr.Max.y, sz.y) : sz.y;
+        if (g.NextWindowData.ContentSizeCallback)
+        {
+            ImGuiSizeCallbackData data;
+            data.UserData = g.NextWindowData.ContentSizeCallbackUserData;
+            data.Pos = window->Pos;
+            data.CurrentSize = window->ContentSize;
+            data.DesiredSize = sz;
+            g.NextWindowData.SizeCallback(&data);
+            sz = data.DesiredSize;
+        }
+    }
+
+    sz.x = IM_FLOOR(sz.x);
+    sz.y = IM_FLOOR(sz.y);
+
     return sz;
 }
 
@@ -6544,6 +6569,15 @@ void ImGui::SetNextWindowSizeConstraints(const ImVec2& size_min, const ImVec2& s
     g.NextWindowData.SizeConstraintRect = ImRect(size_min, size_max);
     g.NextWindowData.SizeCallback = custom_callback;
     g.NextWindowData.SizeCallbackUserData = custom_callback_user_data;
+}
+
+void ImGui::SetNextWindowContentSizeConstraints(const ImVec2& size_min, const ImVec2& size_max, ImGuiSizeCallback custom_callback, void* custom_callback_user_data)
+{
+    ImGuiContext& g = *GImGui;
+    g.NextWindowData.Flags |= ImGuiNextWindowDataFlags_HasContentSizeConstraint;
+    g.NextWindowData.ContentSizeConstraintRect = ImRect(size_min, size_max);
+    g.NextWindowData.ContentSizeCallback = custom_callback;
+    g.NextWindowData.ContentSizeCallbackUserData = custom_callback_user_data;
 }
 
 // Content size = inner scrollable rectangle, padded with WindowPadding.
