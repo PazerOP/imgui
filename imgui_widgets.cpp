@@ -5614,8 +5614,8 @@ bool ImGui::Selectable(const char* label, bool selected, ImGuiSelectableFlags fl
     ItemSize(size, 0.0f);
 
     // Fill horizontal space
-    const float min_x = (flags & ImGuiSelectableFlags_SpanAllColumns) ? window->ContentRegionRect.Min.x : pos.x;
-    const float max_x = (flags & ImGuiSelectableFlags_SpanAllColumns) ? window->ContentRegionRect.Max.x : GetContentRegionMaxAbs().x;
+    const float min_x = (flags & ImGuiSelectableFlags_SpanAllColumns) ? window->DC.CurrentColumns->HostWorkRect.Min.x : pos.x;
+    const float max_x = (flags & ImGuiSelectableFlags_SpanAllColumns) ? window->DC.CurrentColumns->HostWorkRect.Max.x : GetContentRegionMaxAbs().x;
     if (size_arg.x == 0.0f || (flags & ImGuiSelectableFlags_SpanAvailWidth))
         size.x = ImMax(label_size.x, max_x - min_x);
 
