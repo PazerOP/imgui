@@ -7239,6 +7239,12 @@ float ImGui::GetFrameHeightWithSpacing()
 }
 
 // FIXME: All the Contents Region function are messy or misleading. WE WILL AIM TO OBSOLETE ALL OF THEM WITH A NEW "WORK RECT" API. Thanks for your patience!
+ImVec2 ImGui::GetWorkRectSize()
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+    return window->WorkRect.GetSize();
+}
 
 // FIXME: This is in window space (not screen space!).
 ImVec2 ImGui::GetContentRegionMax()
