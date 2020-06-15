@@ -6270,6 +6270,11 @@ void ImGui::PushItemFlag(ImGuiItemFlags option, bool enabled)
     window->DC.ItemFlagsStack.push_back(window->DC.ItemFlags);
 }
 
+ImGuiItemFlags ImGui::GetItemFlags()
+{
+    return GetCurrentWindow()->DC.ItemFlags;
+}
+
 void ImGui::PopItemFlag()
 {
     ImGuiWindow* window = GetCurrentWindow();
