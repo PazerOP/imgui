@@ -45,7 +45,14 @@
 #if defined(_WIN32) && !defined(WINGDIAPI)
 #define WINGDIAPI __declspec(dllimport)     // Some Windows OpenGL headers need this
 #endif
-#if defined(__APPLE__)
+#if defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING3)
+#ifndef GLFW_INCLUDE_NONE
+#define GLFW_INCLUDE_NONE       // GLFW including OpenGL headers causes ambiguity or multiple definition errors.
+#endif
+#include <glbinding/glbinding.h>// Needs to be initialized with glbinding::initialize() in user's code.
+#include <glbinding/gl/gl.h>
+using namespace gl;
+#elif defined(__APPLE__)
 #define GL_SILENCE_DEPRECATION
 #include <OpenGL/gl.h>
 #else

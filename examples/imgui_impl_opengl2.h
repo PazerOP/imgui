@@ -29,3 +29,11 @@ IMGUI_IMPL_API bool     ImGui_ImplOpenGL2_CreateFontsTexture();
 IMGUI_IMPL_API void     ImGui_ImplOpenGL2_DestroyFontsTexture();
 IMGUI_IMPL_API bool     ImGui_ImplOpenGL2_CreateDeviceObjects();
 IMGUI_IMPL_API void     ImGui_ImplOpenGL2_DestroyDeviceObjects();
+
+#if !defined(IMGUI_IMPL_OPENGL_LOADER_GLBINDING3)
+    #if defined(__has_include)
+        #if __has_include(<glbinding/glbinding.h>)
+            #define IMGUI_IMPL_OPENGL_LOADER_GLBINDING3
+        #endif
+    #endif
+#endif
