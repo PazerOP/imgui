@@ -244,14 +244,10 @@ static void ImGui_ImplSDL2_UpdateMousePosAndButtons()
         io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
 
     int mx, my;
-    Uint32 mouse_buttons = SDL_GetMouseState(&mx, &my);
-    io.MouseDown[0] = g_MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-    io.MouseDown[1] = g_MousePressed[1] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-    io.MouseDown[2] = g_MousePressed[2] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
-    g_MousePressed[0] = g_MousePressed[1] = g_MousePressed[2] = false;
+    Uint32 mouse_buttons = SDL_GetGlobalMouseState(&mx, &my);
 
 #if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE && !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !(defined(__APPLE__) && TARGET_OS_IOS)
-    SDL_Window* focused_window = SDL_GetKeyboardFocus();
+    SDL_Window* focused_window = SDL_GetMouseFocus();// SDL_GetKeyboardFocus();
     if (g_Window == focused_window)
     {
         if (g_MouseCanUseGlobalState)
@@ -276,6 +272,14 @@ static void ImGui_ImplSDL2_UpdateMousePosAndButtons()
     if (SDL_GetWindowFlags(g_Window) & SDL_WINDOW_INPUT_FOCUS)
         io.MousePos = ImVec2((float)mx, (float)my);
 #endif
+
+    if (io.MousePos.x != -FLT_MAX || io.MousePos.y != -FLT_MAX)
+    {
+        io.MouseDown[0] = g_MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+        io.MouseDown[1] = g_MousePressed[1] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+        io.MouseDown[2] = g_MousePressed[2] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
+        g_MousePressed[0] = g_MousePressed[1] = g_MousePressed[2] = false;
+    }
 }
 
 static void ImGui_ImplSDL2_UpdateMouseCursor()
