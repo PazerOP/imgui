@@ -1,4 +1,11 @@
+cmake_minimum_required(VERSION 3.13)
+
 project(imgui)
+
+if (POLICY CMP0077)
+	# Allow CMake 3.13+ to override options when using FetchContent / add_subdirectory.
+	cmake_policy(SET CMP0077 NEW)
+endif ()
 
 option(imgui_USE_OPENGL2 "Uses the OpenGL2 implementation." off)
 option(imgui_USE_GLBINDING "Uses glbinding for the OpenGL implementation." off)
@@ -20,10 +27,8 @@ add_library(imgui
 )
 
 if(imgui_USE_OPENGL2)
-	target_sources(imgui PRIVATE
-		"examples/imgui_impl_opengl2.cpp"
-		"examples/imgui_impl_opengl2.h"
-	)
+	target_sources(imgui PRIVATE "examples/imgui_impl_opengl2.cpp")
+	target_sources(imgui PRIVATE "examples/imgui_impl_opengl2.h")
 endif()
 
 if(imgui_USE_GLBINDING)
@@ -33,12 +38,10 @@ endif()
 
 if(imgui_USE_SDL2)
 	find_package(SDL2 CONFIG REQUIRED)
-	target_link_libraries(imgui_desktop SDL2::SDL2)
+	target_link_libraries(imgui PRIVATE SDL2::SDL2)
 
-	target_sources(imgui PRIVATE
-		"examples/imgui_impl_sdl.cpp"
-		"examples/imgui_impl_sdl.h"
-	)
+	target_sources(imgui PRIVATE "examples/imgui_impl_sdl.cpp")
+	target_sources(imgui PRIVATE "examples/imgui_impl_sdl.h")
 endif()
 
 target_include_directories(imgui PUBLIC
