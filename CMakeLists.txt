@@ -7,7 +7,8 @@ if (POLICY CMP0077)
 	cmake_policy(SET CMP0077 NEW)
 endif ()
 
-option(imgui_USE_OPENGL2 "Uses the OpenGL2 implementation." off)
+option(imgui_USE_OPENGL2 "Includes the OpenGL2 implementation." off)
+option(imgui_USE_OPENGL3 "Includes the OpenGL3 implementation." off)
 option(imgui_USE_GLBINDING "Uses glbinding for the OpenGL implementation." off)
 option(imgui_USE_SDL2 "Uses the SDL2 implementation." off)
 
@@ -29,6 +30,11 @@ add_library(imgui
 if(imgui_USE_OPENGL2)
 	target_sources(imgui PRIVATE "examples/imgui_impl_opengl2.cpp")
 	target_sources(imgui PRIVATE "examples/imgui_impl_opengl2.h")
+endif()
+
+if(imgui_USE_OPENGL3)
+	target_sources(imgui PRIVATE "examples/imgui_impl_opengl3.cpp")
+	target_sources(imgui PRIVATE "examples/imgui_impl_opengl3.h")
 endif()
 
 if(imgui_USE_GLBINDING)
