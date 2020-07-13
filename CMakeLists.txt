@@ -39,7 +39,7 @@ endif()
 
 if(imgui_USE_GLBINDING)
 	find_package(glbinding CONFIG REQUIRED)
-	target_link_libraries(imgui PRIVATE glbinding::glbinding)
+	target_link_libraries(imgui PRIVATE glbinding::glbinding glbinding::glbinding-aux)
 endif()
 
 if(imgui_USE_SDL2)
