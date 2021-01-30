@@ -68,7 +68,7 @@ struct WindowData
 {
     static constexpr const char ID[] = "{B44AA747-C413-4C25-93AD-B99065E14644} - " __FILE__;
 
-    bool         g_MousePressed[3] = { false, false, false };
+    bool         g_MousePressed[ImGuiMouseButton_COUNT] = {};
 
     ImGuiContext* WindowContext = nullptr;
 };
@@ -147,6 +147,8 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
                 if (event->button.button == SDL_BUTTON_LEFT) window->g_MousePressed[0] = true;
                 if (event->button.button == SDL_BUTTON_RIGHT) window->g_MousePressed[1] = true;
                 if (event->button.button == SDL_BUTTON_MIDDLE) window->g_MousePressed[2] = true;
+                if (event->button.button == SDL_BUTTON_X1) window->g_MousePressed[3] = true;
+                if (event->button.button == SDL_BUTTON_X2) window->g_MousePressed[4] = true;
                 return true;
             }
 
@@ -313,28 +315,26 @@ static void ImGui_ImplSDL2_UpdateMousePosAndButtons(SDL_Window* window)
     WindowData& data = *reinterpret_cast<WindowData*>(SDL_GetWindowData(window, WindowData::ID));
 
     int mx, my;
-    Uint32 mouse_buttons = SDL_GetMouseState(&mx, &my);
-    io.MouseDown[0] = data.g_MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
-    io.MouseDown[1] = data.g_MousePressed[1] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
-    io.MouseDown[2] = data.g_MousePressed[2] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
-    data.g_MousePressed[0] = data.g_MousePressed[1] = data.g_MousePressed[2] = false;
+    Uint32 mouse_buttons;
+    bool mouse_buttons_updated = false;
+    bool mouse_pos_updated = false;
+    bool focused;
 
 #if SDL_HAS_CAPTURE_AND_GLOBAL_MOUSE && !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !(defined(__APPLE__) && TARGET_OS_IOS)
-    SDL_Window* focused_window = SDL_GetMouseFocus();
-    if (window == focused_window)
+    focused = SDL_GetMouseFocus() == window;
+    if (focused && g_MouseCanUseGlobalState)
     {
-        if (g_MouseCanUseGlobalState)
-        {
-            // SDL_GetMouseState() gives mouse position seemingly based on the last window entered/focused(?)
-            // The creation of a new windows at runtime and SDL_CaptureMouse both seems to severely mess up with that, so we retrieve that position globally.
-            // Won't use this workaround when on Wayland, as there is no global mouse position.
-            int wx, wy;
-            SDL_GetWindowPosition(focused_window, &wx, &wy);
-            SDL_GetGlobalMouseState(&mx, &my);
-            mx -= wx;
-            my -= wy;
-        }
+        // SDL_GetMouseState() gives mouse position seemingly based on the last window entered/focused(?)
+        // The creation of a new windows at runtime and SDL_CaptureMouse both seems to severely mess up with that, so we retrieve that position globally.
+        // Won't use this workaround when on Wayland, as there is no global mouse position.
+        int wx, wy;
+        SDL_GetWindowPosition(window, &wx, &wy);
+        mouse_buttons = SDL_GetGlobalMouseState(&mx, &my);
+        mx -= wx;
+        my -= wy;
+
         io.MousePos = ImVec2((float)mx, (float)my);
+        mouse_buttons_updated = mouse_pos_updated = true;
     }
 
     // SDL_CaptureMouse() let the OS know e.g. that our imgui drag outside the SDL window boundaries shouldn't e.g. trigger the OS window resize cursor.
@@ -342,9 +342,35 @@ static void ImGui_ImplSDL2_UpdateMousePosAndButtons(SDL_Window* window)
     bool any_mouse_button_down = ImGui::IsAnyMouseDown();
     SDL_CaptureMouse(any_mouse_button_down ? SDL_TRUE : SDL_FALSE);
 #else
-    if (SDL_GetWindowFlags(g_Window) & SDL_WINDOW_INPUT_FOCUS)
-        io.MousePos = ImVec2((float)mx, (float)my);
+    focused = SDL_GetWindowFlags(window) & SDL_WINDOW_MOUSE_FOCUS;
 #endif
+
+    if (!mouse_buttons_updated || !mouse_pos_updated)
+    {
+        Uint32 buttons = SDL_GetMouseState(&mx, &my);
+        if (!mouse_buttons_updated)
+        {
+            mouse_buttons = focused ? buttons : 0;
+            mouse_buttons_updated = true;
+        }
+
+        if (!mouse_pos_updated)
+        {
+            io.MousePos = focused ? ImVec2((float)mx, (float)my) : ImVec2(-FLT_MAX, -FLT_MAX);
+            mouse_pos_updated = true;
+        }
+    }
+
+    IM_ASSERT(mouse_buttons_updated);
+    IM_ASSERT(mouse_pos_updated);
+
+    io.MouseDown[0] = data.g_MousePressed[0] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_LEFT)) != 0;  // If a mouse press event came, always pass it as "mouse held this frame", so we don't miss click-release events that are shorter than 1 frame.
+    io.MouseDown[1] = data.g_MousePressed[1] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_RIGHT)) != 0;
+    io.MouseDown[2] = data.g_MousePressed[2] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_MIDDLE)) != 0;
+    io.MouseDown[3] = data.g_MousePressed[3] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_X1)) != 0;
+    io.MouseDown[4] = data.g_MousePressed[4] || (mouse_buttons & SDL_BUTTON(SDL_BUTTON_X2)) != 0;
+
+    data.g_MousePressed[0] = data.g_MousePressed[1] = data.g_MousePressed[2] = data.g_MousePressed[3] = data.g_MousePressed[4] = false;
 }
 
 static void ImGui_ImplSDL2_UpdateMouseCursor()
